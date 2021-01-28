@@ -158,8 +158,12 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             {
                 if (turnContext != null & !this.IsActivityFromExpectedTenant(turnContext))
                 {
-                    this.logger.LogWarning($"Unexpected tenant id {turnContext?.Activity.Conversation.TenantId}");
-                    return Task.CompletedTask;
+                    //AtBot Conceirge Support
+                    if (turnContext.Activity.ChannelId == "teams")
+                    {
+                        this.logger.LogWarning($"Unexpected tenant id {turnContext?.Activity.Conversation.TenantId}");
+                        return Task.CompletedTask;
+                    }
                 }
 
                 // Get the current culture info to use in resource files
@@ -198,7 +202,18 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                 this.logger.LogInformation($"from: {message.From?.Id}, conversation: {message.Conversation.Id}, replyToId: {message.ReplyToId}");
                 await this.SendTypingIndicatorAsync(turnContext).ConfigureAwait(false);
 
-                switch (message.Conversation.ConversationType.ToLower())
+                //AtBot Conceirge Support
+                string cType = "";
+                if (turnContext.Activity.ChannelId == "directline" || turnContext.Activity.ChannelId == "webchat")
+                {
+                    cType = ConversationTypePersonal;
+                }
+                else
+                {
+                    cType = message.Conversation.ConversationType.ToLower();
+                }
+
+                switch (cType)
                 {
                     case ConversationTypePersonal:
                         await this.OnMessageActivityInPersonalChatAsync(
@@ -252,7 +267,18 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
                     return;
                 }
 
-                switch (activity.Conversation.ConversationType.ToLower())
+                //AtBot Conceirge Support
+                string cType = "";
+                if(turnContext.Activity.ChannelId == "directline" || turnContext.Activity.ChannelId == "webchat")
+                {
+                    cType = ConversationTypePersonal;
+                }
+                else
+                {
+                    cType = activity.Conversation.ConversationType.ToLower();
+                }
+
+                switch (cType)
                 {
                     case ConversationTypePersonal:
                         await this.OnMembersAddedToPersonalChatAsync(activity.MembersAdded, turnContext).ConfigureAwait(false);
@@ -718,7 +744,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             {
                 // User started chat with the bot in personal scope, for the first time.
                 this.logger.LogInformation($"Bot added to 1:1 chat {activity.Conversation.Id}");
+
                 var welcomeText = await this.configurationProvider.GetSavedEntityDetailAsync(ConfigurationEntityTypes.WelcomeMessageText).ConfigureAwait(false);
+
                 var userWelcomeCardAttachment = WelcomeCard.GetCard(welcomeText);
                 await turnContext.SendActivityAsync(MessageFactory.Attachment(userWelcomeCardAttachment)).ConfigureAwait(false);
             }
@@ -761,7 +789,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
             ITurnContext<IMessageActivity> turnContext,
             CancellationToken cancellationToken)
         {
-            if (!string.IsNullOrEmpty(message.ReplyToId) && (message.Value != null) && ((JObject)message.Value).HasValues)
+            //AtBot Conceirge Support
+            if ((!string.IsNullOrEmpty(message.ReplyToId) || (message.ChannelId == "directline" || message.ChannelId == "webchat")) && 
+                    (message.Value != null) && ((JObject)message.Value).HasValues)
             {
                 this.logger.LogInformation("Card submit in 1:1 chat");
                 await this.OnAdaptiveCardSubmitInPersonalChatAsync(message, turnContext, cancellationToken).ConfigureAwait(false);

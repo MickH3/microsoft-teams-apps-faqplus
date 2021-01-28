@@ -100,6 +100,16 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
             TeamsChannelAccount member,
             ITicketsProvider ticketsProvider)
         {
+            //AtBot Conceirge Support
+
+            //Boolean as to whether this is the Teams channel.  If not, we assume bot is being interfaced as an AtBot Agent
+            bool isTeamsChannel = message.ChannelId == "msteams";
+
+            ChannelAccount agentUser = message.From;
+
+            //When creating a ticket from the bot acting as an agent, the requestor information will be limited to the UPN.  Additional graph calls
+            //will be needed to pull AAD GUID and display name.
+
             TicketEntity ticketEntity = new TicketEntity
             {
                 TicketId = Guid.NewGuid().ToString(),
@@ -107,9 +117,9 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Helpers
                 DateCreated = DateTime.UtcNow,
                 Title = data.Title,
                 Description = data.Description,
-                RequesterName = member.Name,
-                RequesterUserPrincipalName = member.UserPrincipalName,
-                RequesterGivenName = member.GivenName,
+                RequesterName = isTeamsChannel ? member.Name : agentUser.Name,
+                RequesterUserPrincipalName = isTeamsChannel ? member.UserPrincipalName : agentUser.Name,
+                RequesterGivenName = isTeamsChannel ? member.GivenName : agentUser.Name,
                 RequesterConversationId = message.Conversation.Id,
                 LastModifiedByName = message.From.Name,
                 LastModifiedByObjectId = message.From.AadObjectId,

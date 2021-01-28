@@ -53,6 +53,8 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Common.Providers
         {
             this.options = optionsAccessor.CurrentValue;
             string searchServiceValue = this.options.SearchServiceName;
+
+
             this.searchServiceClient = new SearchServiceClient(
                 searchServiceValue,
                 new SearchCredentials(this.options.SearchServiceAdminApiKey));
